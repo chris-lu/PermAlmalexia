@@ -1,4 +1,4 @@
-PermAlmalexia is an Elder Scrools Online Addon that allows you to run again and automatically some mementos when their effect fades out.
+PermAlmalexia is an Elder Scrolls Online Addon that allows you to run again and automatically some mementos when their effect fades out.
 
 --------------------------------------------------------------------------------------------------
 
@@ -6,7 +6,6 @@ The following mementos are / should be supported for now:
 - Almalexia's Enchanted Lantern
 - Finvir's Trinket
 - Storm Atronach Aura
-- Storm Atronach Transform
 - Floral Swirl Aura
 - Wild Hunt Transform
 - Wild Hunt Leaf-Dance Aura

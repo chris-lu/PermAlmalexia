@@ -4,22 +4,27 @@ PermAlmalexia = {
 		type = "panel",
 		name = "PermAlmalexia: Permanent Mementos",
 		author = "mouton",
-		version = "1.0"
+		version = "1.0.2"
 	},
-	settings = {},
+	mementos = {
+		-- https://esoitem.uesp.net/viewlog.php?record=collectibles
+--		[336]  = { abilityId = false, name = GetCollectibleName(336), delay = 500, cooldown = 200 }, -- Finvir
+		[336]  = { abilityId = 21226, name = GetCollectibleName(336), delay = 500, cooldown = 3200 }, -- Finvir
+		[341]  = { abilityId = 26829, name = GetCollectibleName(341), delay = 1000, cooldown = 2800 }, -- Almalexia
+		[347]  = { abilityId = 41950, name = GetCollectibleName(347), delay = 500, cooldown = 3000 }, -- Fetish of Anger
+		[594]  = { abilityId = 85344, name = GetCollectibleName(594), delay = 2000, cooldown = 100 }, -- Storm Atronach Aura
+		[758]  = { abilityId = 86978, name = GetCollectibleName(758), delay = 500, cooldown = 100 }, -- Floral Swirl Aura
+		[759]  = { abilityId = 86977, name = GetCollectibleName(759), delay = 500, cooldown = 100 }, -- Wild Hunt Transform
+		[760]  = { abilityId = 86976, name = GetCollectibleName(760), delay = 500, cooldown = 100 }, -- Wild Hunt Leaf-Dance Aura
+		[1183] = { abilityId = 92868, name = GetCollectibleName(1183), delay = 500, cooldown = 100 }, -- Dwemervamidium Mirage
+
+	    [596]  = { abilityId = false, name = GetCollectibleName(596), delay = 500, cooldown = 200 }, -- Storm Atronach Transform - Not working anymore as no more ability effect
+		[1384] = { abilityId = false, name = GetCollectibleName(1384), delay = 500, cooldown = 200 }, -- Swarm of Crows - Not working anymore as no more ability effect
+	},
+	settings = {
+		mementoId = 0,
+	},
 	defaultSettings = {
-		mementos = {
-			-- https://esoitem.uesp.net/viewlog.php?record=collectibles
-			[341]  = {abilityId = 26829, name = GetCollectibleName(341),  delay = 1000, cooldown = 2800 }, -- Almalexia
-			[336]  = {abilityId = 21226, name = GetCollectibleName(336),  delay = 500, cooldown = 3200 }, -- Finvir
-			[594]  = {abilityId = 85344, name = GetCollectibleName(594),  delay = 2000, cooldown = 100 }, -- Storm Atronach Aura
-			[596]  = {abilityId = 85349, name = GetCollectibleName(596),  delay = 500, cooldown = 100 }, -- Storm Atronach Transform
-			[758]  = {abilityId = 86978, name = GetCollectibleName(758),  delay = 500, cooldown = 100 }, -- Floral Swirl Aura
-			[759]  = {abilityId = 86977, name = GetCollectibleName(759),  delay = 500, cooldown = 100 }, -- Wild Hunt Transform
-			[760]  = {abilityId = 86976, name = GetCollectibleName(760),  delay = 500, cooldown = 100 }, -- Wild Hunt Leaf-Dance Aura
-			[1183] = {abilityId = 92868, name = GetCollectibleName(1183), delay = 500, cooldown = 100 }, -- Dwemervamidium Mirage
--- 			[1384] = {abilityId = 97274, name = GetCollectibleName(1384), delay = 500, cooldown = 100 }, -- Swarm of Crows - Not working anymore as no more ability effect
-		},
 		mementoId = 0,
 		variableVersion = 1,
 		debug = false,
@@ -32,51 +37,82 @@ local PAcallback = false;
 local PAfailure = 0;
 local fromCallback = false;
 
+-- Workflow
+-- Event Based (prefered) : OnEffectChanged -> (fade) delayCollectible -> useCollectible -> Prev_ZO_CollectibleData_Use
+-- Activation based (inventory only) : UseCollectible -> delayCollectible -> useCollectible -> delayCollectible
+
+local Prev_ZO_CollectibleData_Use = UseCollectible
+function UseCollectible(collectibleId, actorCategory)
+	-- Workaround for mementos without effects. Can only be triggered from inventory
+	if PA.mementos[collectibleId] and not PA.mementos[collectibleId].abilityId then
+		PA.d('Catching collectible call: ' .. collectibleId)
+		PA.settings.mementoId = collectibleId
+		if PArunning == false then
+			CHAT_SYSTEM:AddMessage(zo_strformat(PERMALMALEXIA_START_MEMENTO, PA.mementos[collectibleId].name))
+		end
+		PArunning = true
+		PA.delayCollectible()
+	else
+		PA.d('Not catching for: ' .. collectibleId)
+		Prev_ZO_CollectibleData_Use(collectibleId, actorCategory)
+	end
+end
+
 
 function PA.isEffectStillActive()
 	local active = false
 	for i = 1, GetNumBuffs("player") do
 		local buffName, startTime, endTime, buffSlot, stackCount, iconFile, buffType, effectType, abilityType, statusEffectType, abilityId = GetUnitBuffInfo("player", i)
-		active = active or PA.getMementoFromEffect(abilityId)
+		active = active or PA.getMementoFromEffect(abilityId) ~= false
 	end
 	return active;
 end
 
 function PA.getMementoFromEffect(abilityId)
-	for mementoId, ability in pairs(PA.settings.mementos) do
-		if ability.abilityId == abilityId then
+	-- Do not get back mementos without abilityId
+	for mementoId, ability in pairs(PA.mementos) do
+		if ability.abilityId and ability.abilityId == abilityId then
 			return mementoId
 		end
-	end	
+	end
 	return false
 end
 
 function PA.useCollectible(mementoId)
-	-- Do not trigger while mounted, dead or so, it fails with a bump sound.
-	if not (IsMounted() or IsUnitReincarnating("player") or IsUnitSwimming("player") or IsUnitDead("player") or GetUnitStealthState("player") ~= STEALTH_STATE_NONE) then
-		fromCallback = true
-		UseCollectible(mementoId)
-	else
-		PA.d('Player cannot activate collectibles at the moment.')
-	end
+	if PArunning and PAcallback == false then
+		-- Do not trigger while mounted, dead or so, it fails with a bump sound.
+		if not (IsMounted() or IsUnitReincarnating("player") or IsUnitSwimming("player") or IsUnitDead("player") or GetUnitStealthState("player") ~= STEALTH_STATE_NONE) then
+			fromCallback = true
+			Prev_ZO_CollectibleData_Use(mementoId)
+		else
+			PA.d('Player cannot activate collectibles at the moment.')
+		end
 
-	local callback = function ()
-		PA.checkCollectibleActivation()
+		local callback = function()
+			PAcallback = false
+			-- Use abilityId when available as it's more reliable
+			if PA.mementos[mementoId].abilityId then
+				PA.checkCollectibleActivation()
+			-- Try to catch with overwritten function if not.
+			else
+				PA.delayCollectible()
+			end
+		end
+		local remaining, duration = GetCollectibleCooldownAndDuration(mementoId)
+		PAcallback = zo_callLater(callback, math.max(remaining, PA.mementos[mementoId].delay * math.max(1, PAfailure)))
 	end
-	local remaining, duration = GetCollectibleCooldownAndDuration(PA.settings.mementoId)
-	zo_callLater(callback, math.max(remaining, PA.settings.mementos[PA.settings.mementoId].delay * math.max(1, PAfailure)))
 end
 
 function PA.delayCollectible()
 	if PArunning and PAcallback == false and PA.settings.mementoId then
-		local callback = function ()
-			PA.useCollectible(PA.settings.mementoId)
+		local callback = function()
 			PAcallback = false
+			PA.useCollectible(PA.settings.mementoId)
 		end
 
 		-- Cooldown when memento is finished
 		local remaining, duration = GetCollectibleCooldownAndDuration(PA.settings.mementoId)
-		PAcallback = zo_callLater(callback, math.max(remaining, PA.settings.mementos[PA.settings.mementoId].cooldown))
+		PAcallback = zo_callLater(callback, math.max(remaining, PA.mementos[PA.settings.mementoId].cooldown))
 	end
 end
 
@@ -87,7 +123,9 @@ function PA.checkCollectibleActivation()
 	end
 end
 
-function PA.OnEffectChanged(eventCode, changeType, effectSlot, effectName, unitTag, beginTime, endTime, stackCount, iconName, buffType, effectType, abilityType, statusEffectType, unitName, unitId, abilityId, sourceType)
+function PA.OnEffectChanged(eventCode, changeType, effectSlot, effectName, unitTag, beginTime, endTime, stackCount,
+	                        iconName, buffType, effectType, abilityType, statusEffectType, unitName, unitId, abilityId,
+	                        sourceType)
 	-- Only refresh if we started manually
 	if PArunning == true and changeType == EFFECT_RESULT_FADED then
 		local mementoId = PA.getMementoFromEffect(abilityId)
@@ -125,7 +163,6 @@ function PA.OnCollectibleUse(eventCode, result, isAttemptingActivation)
 			end
 		else
 			PAfailure = 0
-			
 		end
 	end
 
@@ -136,17 +173,43 @@ function PA.debug(is_debug)
 	-- For debugging all effects
 	if is_debug then
 		PA.settings.debug = true
-		EVENT_MANAGER:RegisterForEvent(PA.name, EVENT_EFFECT_CHANGED, PA.OnEffectChanged)
-		EVENT_MANAGER:AddFilterForEvent(PA.name, EVENT_EFFECT_CHANGED, REGISTER_FILTER_UNIT_TAG, "player")
 	else
 		PA.settings.debug = false
-		EVENT_MANAGER:UnregisterForEvent(PA.name)
 	end
 end
 
 function PA.d(...)
 	if PA.settings.debug then
 		d(...)
+	end
+end
+
+
+-- Inpired by Memento Miner from @Phinix
+-- /script PermAlmalexia.listMementos()
+function PA.listMementos()
+	if PA.settings.debug then
+		local tData = {}
+		local allCollectibles = ZO_COLLECTIBLE_DATA_MANAGER:GetAllCollectibleDataObjects({ ZO_CollectibleCategoryData.IsStandardCategory }, { ZO_CollectibleData.IsValidForPlayer, ZO_CollectibleData.IsSlottable })
+
+		for _, collectibleData in ipairs(allCollectibles)  do
+			-- https://wiki.esoui.com/Globals#CollectibleCategoryType
+			local tAbility = collectibleData:GetReferenceId() -- data object returns ability ID from this function
+			local tDuration = GetAbilityDuration(tAbility) -- duration of the memento in milliseconds
+			if tDuration > 0 then
+				tData[collectibleData.collectibleId] = {
+					-- create data object for each matching memento and add to output table
+					name          = collectibleData.name,
+					collectibleId = collectibleData.collectibleId,
+					abilityId     = tAbility,
+					duration      = tDuration,
+				}
+			end
+		end
+		-- commits the output table to saved variables, /reloadui to save, then open \Documents\Elder Scrolls Online\live\SavedVariables\MementoMiner.lua
+		PA.settings.debug = tData
+
+		PA.d("Process complete. Please /reloadui")
 	end
 end
 
@@ -157,6 +220,7 @@ function PA.OnAddOnLoaded(event, addonName)
 end
 
 function PA.init()
+	PA.d(PArunning, PA.isEffectStillActive())
 	if PArunning then
 		PA.checkCollectibleActivation()
 	end
@@ -165,15 +229,16 @@ end
 function PA:Initialize()
 	PA.settings = ZO_SavedVars:NewAccountWide(PA.name .. "Variables", PA.defaultSettings.variableVersion, nil, PA.defaultSettings)
 
-	EVENT_MANAGER:RegisterForEvent(PA.name, EVENT_PLAYER_ACTIVATED, PA.init )
+	EVENT_MANAGER:RegisterForEvent(PA.name, EVENT_PLAYER_ACTIVATED, PA.init)
 
-	for mementoId, ability in pairs(PA.settings.mementos) do
+	for mementoId, ability in pairs(PA.mementos) do
 		local eventName = PA.name .. mementoId
 		EVENT_MANAGER:RegisterForEvent(eventName, EVENT_EFFECT_CHANGED, PA.OnEffectChanged)
 		EVENT_MANAGER:AddFilterForEvent(eventName, EVENT_EFFECT_CHANGED, REGISTER_FILTER_ABILITY_ID, ability.abilityId)
+		EVENT_MANAGER:AddFilterForEvent(eventName, EVENT_EFFECT_CHANGED, REGISTER_FILTER_UNIT_TAG, "player")
 	end
 
-	EVENT_MANAGER:RegisterForEvent(PA.name, EVENT_COLLECTIBLE_USE_RESULT, PA.OnCollectibleUse )
+	EVENT_MANAGER:RegisterForEvent(PA.name, EVENT_COLLECTIBLE_USE_RESULT, PA.OnCollectibleUse)
 	EVENT_MANAGER:UnregisterForEvent(PA.name, EVENT_ADD_ON_LOADED)
 end
 

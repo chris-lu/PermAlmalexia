@@ -1,6 +1,7 @@
 local strings = {
   PERMALMALEXIA_DESCRIPTION = "Enables you (and @Kasskroot as well) to run any memento when the effect fades out !",
   PERMALMALEXIA_START = "PermAlmalexia started with <<1>>.",
+  PERMALMALEXIA_START_MEMENTO = "PermAlmalexia started with the memento <<1>>.",
   PERMALMALEXIA_END   = "PermAlmalexia will stop."
 }
 

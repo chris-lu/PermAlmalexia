@@ -5,9 +5,7 @@
 
 SafeAddString(PERMALMALEXIA_DESCRIPTION, "Enables you (and @Kasskroot as well) to run any memento when the effect fades out !", 1)
 SafeAddString(PERMALMALEXIA_START, "PermAlmalexia started with <<1>>.", 1)
+SafeAddString(PERMALMALEXIA_START_MEMENTO, "PermAlmalexia started with the memento <<1>>.", 1)
 SafeAddString(PERMALMALEXIA_END, "PermAlmalexia will stop.", 1)
-
- = 
-   = ""
 
 --]]
