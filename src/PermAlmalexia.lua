@@ -4,7 +4,7 @@ PermAlmalexia = {
 		type = "panel",
 		name = "PermAlmalexia: Permanent Mementos",
 		author = "mouton",
-		version = "1.0.2"
+		version = "1.0.4"
 	},
 	mementos = {
 		-- https://esoitem.uesp.net/viewlog.php?record=collectibles
@@ -17,9 +17,11 @@ PermAlmalexia = {
 		[759]  = { abilityId = 86977, name = GetCollectibleName(759), delay = 500, cooldown = 100 }, -- Wild Hunt Transform
 		[760]  = { abilityId = 86976, name = GetCollectibleName(760), delay = 500, cooldown = 100 }, -- Wild Hunt Leaf-Dance Aura
 		[1183] = { abilityId = 92868, name = GetCollectibleName(1183), delay = 500, cooldown = 100 }, -- Dwemervamidium Mirage
+		[10371] = { abilityId = 170722, name = GetCollectibleName(10371), delay = 500, cooldown = 100 }, -- Fargrave Occult Curio
 
 	    [596]  = { abilityId = false, name = GetCollectibleName(596), delay = 500, cooldown = 200 }, -- Storm Atronach Transform - Not working anymore as no more ability effect
-		[1384] = { abilityId = false, name = GetCollectibleName(1384), delay = 500, cooldown = 200 }, -- Swarm of Crows - Not working anymore as no more ability effect
+		[1384] = { abilityId = false, name = GetCollectibleName(1384), delay = 500, cooldown = 200 }, -- Swarm of Crows - Not working anymore as no more ability effect - was 97274
+		[9361] = { abilityId = false, name = GetCollectibleName(9361), delay = 500, cooldown = 200 }, -- Inferno Cleats
 	},
 	settings = {
 		mementoId = 0,
@@ -190,7 +192,7 @@ end
 function PA.listMementos()
 	if PA.settings.debug then
 		local tData = {}
-		local allCollectibles = ZO_COLLECTIBLE_DATA_MANAGER:GetAllCollectibleDataObjects({ ZO_CollectibleCategoryData.IsStandardCategory }, { ZO_CollectibleData.IsValidForPlayer, ZO_CollectibleData.IsSlottable })
+		local allCollectibles = ZO_COLLECTIBLE_DATA_MANAGER:GetAllCollectibleDataObjects({ function() return true end }, { ZO_CollectibleData.IsSlottable })
 
 		for _, collectibleData in ipairs(allCollectibles)  do
 			-- https://wiki.esoui.com/Globals#CollectibleCategoryType
@@ -204,6 +206,7 @@ function PA.listMementos()
 					abilityId     = tAbility,
 					duration      = tDuration,
 				}
+				PA.d(tData[collectibleData.collectibleId])
 			end
 		end
 		-- commits the output table to saved variables, /reloadui to save, then open \Documents\Elder Scrolls Online\live\SavedVariables\MementoMiner.lua

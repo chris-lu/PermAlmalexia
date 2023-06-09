@@ -7,8 +7,9 @@
 ## Title: PermAlmalexia
 ## Description: Enables you (and @Kasskroot as well) to run any memento when the effect fades out !
 ## Author: @mouton
-## APIVersion: 101036
-## Version: 1.0.2
+## APIVersion: 101038
+## Version: 1.0.4
+;## SavedVariables: PermAlmalexiaVariables
 
 ## Core
 lang/strings.lua
