@@ -4,7 +4,7 @@ PermAlmalexia = {
 		type = "panel",
 		name = "PermAlmalexia: Permanent Mementos",
 		author = "mouton",
-		version = "1.0.4"
+		version = "1.1.0"
 	},
 	mementos = {
 		-- https://esoitem.uesp.net/viewlog.php?record=collectibles
@@ -22,6 +22,7 @@ PermAlmalexia = {
 	    [596]  = { abilityId = false, name = GetCollectibleName(596), delay = 500, cooldown = 200 }, -- Storm Atronach Transform - Not working anymore as no more ability effect
 		[1384] = { abilityId = false, name = GetCollectibleName(1384), delay = 500, cooldown = 200 }, -- Swarm of Crows - Not working anymore as no more ability effect - was 97274
 		[9361] = { abilityId = false, name = GetCollectibleName(9361), delay = 500, cooldown = 200 }, -- Inferno Cleats
+		[10652] = {abilityId = false, name = GetCollectibleName(10652), delay=500, cooldown=200}, -- Soul crystals of the returned
 	},
 	settings = {
 		mementoId = 0,
