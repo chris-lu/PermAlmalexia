@@ -4,7 +4,7 @@ PermAlmalexia = {
 		type = "panel",
 		name = "PermAlmalexia: Permanent Mementos",
 		author = "mouton",
-		version = "1.1.1"
+		version = "1.2.0"
 	},
 	mementos = {
 		-- https://esoitem.uesp.net/viewlog.php?record=collectibles

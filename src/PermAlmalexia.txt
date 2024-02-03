@@ -8,7 +8,7 @@
 ## Description: Enables you (and @Kasskroot as well) to run any memento when the effect fades out !
 ## Author: @mouton
 ## APIVersion: 101040
-## Version: 1.1.1
+## Version: 1.2.0
 ;## SavedVariables: PermAlmalexiaVariables
 
 ## Core
